@@ -1,60 +1,343 @@
-# Aula-17-backend-autenticacao
+# ✈️ Travel Manager - Backend
 
-Esse repositório é construído por cima do backend presente na Aula-15-Backend-Crud: [Repo-Aula-15](https://github.com/philcisco-classroom/aula-15-crud-backend-viagens).
-O objetivo é adicionar as seguintes funcionalidades:
+Esse repositório contém o backend do sistema **Travel Manager**, desenvolvido utilizando **Node.js**, **Express**, **TypeScript**, **Prisma ORM** e **SQLite**.
 
-- Criação e Login de Usuário
+O sistema é responsável por disponibilizar a API REST utilizada pelo frontend, realizando autenticação de usuários, gerenciamento das viagens e persistência dos dados no banco de dados.
+
+Além das funcionalidades de CRUD, o projeto implementa autenticação utilizando **JWT**, criptografia de senhas com **bcrypt** e controle de acesso às rotas protegidas.
+
+---
+
+# Funcionalidades
+
+O backend disponibiliza as seguintes funcionalidades:
+
+- Cadastro de usuários
+- Login de usuários
 - Logout
-- Rotas de autenticação
-- Geração de Token com JWT que será inserido em cookie HttpOnly (só podem ser manipulados no servidor)
-- Modificação para buscar apenas viagens pertencentes a um usuário específico.
-  - Não é pré-requisito do projeto final, mas muitos colegas gostam de entender o funcionamento nesse formato então já deixo disponivel.
-- Foi feita uma modificação no schemas do prisma para permitir a relação entre usuários e viagens. Para o projeto final não é necessário, mas como é de interesse da maioria da turma deixo o exemplo 
+- Autenticação utilizando JWT
+- Geração de Token armazenado em Cookie HttpOnly
+- Rotas protegidas por Middleware de autenticação
+- Cadastro de viagens
+- Consulta de viagens
+- Atualização de viagens
+- Exclusão de viagens
+- Persistência dos dados utilizando Prisma ORM e SQLite
+
+---
+
+# Tecnologias Utilizadas
+
+- Node.js
+- Express
+- TypeScript
+- Prisma ORM
+- SQLite
+- JWT (JSON Web Token)
+- bcrypt
+- cookie-parser
+
+---
 
 # Bibliotecas
 
-Para o bom funcionamento do backend com autenticação precisamos instalar as seguintes bibliotecas (caso você apenas vá clonar esse projeto, elas já estão no package.json, basta executar $ npm i)
+Para o funcionamento correto do backend execute:
 
-     - $ npm i bcrypt - Usada para fazer o hash da senha antes de salvar no banco de dados)
-     - $ npm i jsonwebtoken - Usada para gerar o Token (assinatura digital) do usuário. Com esse Token entederemos que o usuário está autenticado e poderá acessar os recursos em /viagens
-     - $ npm i -D @types/bcrypt @types/jsonwebtoken - Usada para instalar os tipos Typescript de bcrypt e jwt
-     - $ npm i cookie-parser - Permite a manipulação de cookies do lado do servidor
-     - $ npm i -D @types/cookie-parser - Tipos Typescript do cookie-parser
+```bash
+    npm install
+```
 
-bcrypt - Função hash para a senha. Não devemos armazenar senhas em texto claro
-JWT - Para autenticação e geração de tokens.
+Caso seja necessário instalar manualmente:
 
-# Novos arquivos
+```bash
+    npm install bcrypt
+    npm install jsonwebtoken
+    npm install cookie-parser
+    npm install @prisma/client
+```
 
+Dependências de desenvolvimento:
+
+```bash
+    npm install -D @types/bcrypt
+    npm install -D @types/jsonwebtoken
+    npm install -D @types/cookie-parser
+    npm install -D prisma
+```
+
+### Finalidade das bibliotecas
+
+**bcrypt**
+
+Utilizada para criptografar as senhas antes de armazená-las no banco de dados.
+
+**jsonwebtoken (JWT)**
+
+Responsável pela geração do Token de autenticação utilizado pelo sistema.
+
+**cookie-parser**
+
+Permite ao servidor manipular os Cookies enviados pelo navegador.
+
+**Prisma ORM**
+
+Responsável pela comunicação entre a aplicação e o banco de dados SQLite.
+
+---
+
+# Estrutura do Projeto
 
 ```
 src
+│
 ├── controller
-    ├── auth.controller.ts (local chamado após o desvio do auth.routes. Aqui extrai os dados das requisições antes de chamar os services
-├── middelware
-    ├── auth.middleware.ts (Local que iintercepta requisições e verificar se usuário possui token válido)
+│   ├── auth.controller.ts
+│   └── viagem.controller.ts
+│
+├── middleware
+│   └── auth.middleware.ts
+│
+├── prisma
+│   └── client.ts
+│
 ├── routes
-    ├── auth.routes.ts (Faz o redirecionamento de POST /create, POST /login e POST /logout)
-├── tipos
-    ├── auth-payload.ts (tipo de dado que representa o conteúdo útil de autenticação)
+│   ├── auth.routes.ts
+│   └── viagem.routes.ts
+│
 ├── services
-    ├── auth.services.ts (acesso a base de dados para criar user e validar login)
-
-
+│   ├── auth.service.ts
+│   └── viagem.service.ts
+│
+├── tipos
+│
+├── app.ts
+└── server.ts
 ```
 
-# Criar .env
+---
 
-- DATABASE_URL="file:./app.bd (da Aula-15)
-- JWT_SECRET="gerar um token".
+# Organização da Aplicação
 
-Uma forma comum para gerar o JWT_SECRET é usar o próprio node. Com a seguinte sintaxe no terminal:
+O backend foi dividido em camadas para facilitar a manutenção do código.
 
-  - $ node
-  - $ require('crypto').randomBytes(64).toString('hex')
-Em seguida copiar o resultado e colocar como valor de JWT_SECRET
-  - $ .exit (para fechar o terminal node)
+### Routes
 
+Recebem as requisições HTTP e encaminham para o Controller correspondente.
 
+### Controllers
 
+Recebem a requisição, extraem os dados enviados pelo cliente (`req.body`, `req.params`, `req.cookies`) e chamam os Services.
 
+### Services
+
+Implementam as regras de negócio da aplicação e realizam o acesso ao banco de dados utilizando Prisma ORM.
+
+### Middleware
+
+Intercepta as requisições protegidas e verifica se o Token JWT é válido antes de permitir o acesso aos recursos da API.
+
+### Prisma
+
+Responsável pela comunicação entre a aplicação e o banco SQLite.
+
+---
+
+# Fluxo da Autenticação
+
+```
+Frontend
+        │
+        ▼
+POST /login
+        │
+        ▼
+auth.routes.ts
+        │
+        ▼
+auth.controller.ts
+        │
+        ▼
+auth.service.ts
+        │
+        ▼
+Validação do usuário
+        │
+        ▼
+bcrypt.compare()
+        │
+        ▼
+JWT.sign()
+        │
+        ▼
+Cookie HttpOnly
+        │
+        ▼
+Resposta ao Frontend
+```
+
+---
+
+# Fluxo do Cadastro de Viagens
+
+```
+Frontend
+        │
+        ▼
+POST /viagens
+        │
+        ▼
+viagem.routes.ts
+        │
+        ▼
+viagem.controller.ts
+        │
+        ▼
+viagem.service.ts
+        │
+        ▼
+Prisma ORM
+        │
+        ▼
+SQLite
+```
+
+---
+
+# Banco de Dados
+
+O projeto utiliza **SQLite** como banco de dados e **Prisma ORM** para realizar as operações de persistência.
+
+As tabelas são definidas em:
+
+```
+prisma/schema.prisma
+```
+
+Após alterações no schema executar:
+
+```bash
+    npx prisma migrate dev
+    npx prisma generate
+```
+
+---
+
+# Arquivo .env
+
+Criar um arquivo `.env` na raiz do projeto contendo:
+
+```env
+    DATABASE_URL="file:./app.db"
+    JWT_SECRET="seu_token_secreto"
+```
+
+Para gerar um JWT_SECRET seguro:
+
+```bash
+    node
+```
+
+Depois:
+
+```javascript
+    require('crypto').randomBytes(64).toString('hex')
+```
+
+Copiar o resultado para o `.env`.
+
+Para sair do Node:
+
+```bash
+    .exit
+```
+
+---
+
+# Execução
+
+Instalar as dependências:
+
+```bash
+    npm install
+```
+
+Executar as migrations:
+
+```bash
+    npx prisma migrate dev
+```
+
+Gerar o cliente Prisma:
+
+```bash
+    npx prisma generate
+```
+
+Executar o servidor:
+
+```bash
+    npm run dev
+```
+
+Servidor disponível em:
+
+```
+    http://localhost:3001
+```
+
+---
+
+# Endpoints Principais
+
+## Autenticação
+
+```
+POST /auth/create
+POST /auth/login
+POST /auth/logout
+```
+
+## Viagens
+
+```
+GET    /viagens
+GET    /viagens/:id
+POST   /viagens
+PUT    /viagens/:id
+DELETE /viagens/:id
+```
+
+---
+
+# Screenshots
+
+## Prisma Studio
+
+![Prisma Studio](./screenshots/bdstudio.png)
+
+---
+
+## Estrutura do Projeto
+
+![Estrutura do Projeto](./screenshots/Estruturaback.png)
+
+---
+
+## Resposta da API
+
+![Requisição da API](./screenshots/requisicaoApi.png)
+
+---
+
+# Integrantes
+
+| Integrante | GitHub |
+|------------|--------|
+| Rafael Ramos da Silva | https://github.com/ramosprof |
+| Pedro Henrique Campos | https://github.com/Phpfcampos |
+
+---
+
+# Licença
+
+Projeto desenvolvido para fins acadêmicos na disciplina de Programação Web XDES03.
